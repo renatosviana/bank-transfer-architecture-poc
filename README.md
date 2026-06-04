@@ -86,7 +86,11 @@ http://localhost:8080/swagger-ui/index.html
 
 ---
 
-## Sample Request
+## Validation Summary
+
+### Idempotency
+
+Validated repeated requests using identical idempotency keys.
 
 ```bash
 curl -X POST http://localhost:8080/transfers \
@@ -98,14 +102,6 @@ curl -X POST http://localhost:8080/transfers \
     "amount":100.00
   }'
 ```
-
----
-
-## Validation Summary
-
-### Idempotency
-
-Validated repeated requests using identical idempotency keys.
 
 Result:
 
@@ -123,21 +119,36 @@ Validated:
 
 ### Dead Letter Queue
 
+```bash
+curl http://localhost:8080/admin/dlq
+```
+
 Validated:
 
 - Failed transfer preservation
 - Replay capability
 - Full failure context retention
 
-### Horizontal Scaling
+### Horizontal Scaling & Load Balancing
+
+Purpose: Verify that multiple stateless application instances are running behind Nginx and sharing external state through PostgreSQL and Redis.
+
+```bash
+docker compose ps
+```
 
 Validated:
 
-- Multiple stateless application instances
-- Nginx traffic distribution
-- Shared persistence layer
+- app1 and app2 running as separate stateless instances
+- Nginx routing traffic through port 8080
+- Shared PostgreSQL and Redis persistence/cache layers
+- Application tier scaled horizontally
 
 ### Kafka
+
+```bash
+docker logs kafka --tail 50
+```
 
 Validated:
 
@@ -149,6 +160,14 @@ Validated:
 ### Load Testing
 
 Executed using Grafana k6.
+
+Powershell command:
+```bash
+bank-transfer-architecture-lab-gradle-enhanced> docker run --rm -i `
+>>   -v "${PWD}\load-tests:/scripts" `
+>>   -e BASE_URL=http://host.docker.internal:8080 `
+>>   grafana/k6 run /scripts/create-transfer.js
+```
 
 Results:
 
