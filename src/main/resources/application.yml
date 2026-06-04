@@ -1,0 +1,77 @@
+spring:
+  application:
+    name: bank-transfer-architecture-lab
+
+  datasource:
+    url: ${SPRING_DATASOURCE_URL:jdbc:h2:mem:transfers;MODE=PostgreSQL;DB_CLOSE_DELAY=-1}
+    username: ${SPRING_DATASOURCE_USERNAME:sa}
+    password: ${SPRING_DATASOURCE_PASSWORD:}
+
+  h2:
+    console:
+      enabled: true
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+
+  batch:
+    jdbc:
+      initialize-schema: always
+    job:
+      enabled: false
+
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:6379}
+
+  cache:
+    type: ${CACHE_TYPE:simple}
+
+  kafka:
+    bootstrap-servers: ${KAFKA_BOOTSTRAP_SERVERS:localhost:9092}
+    consumer:
+      group-id: transfer-lab
+      auto-offset-reset: earliest
+    producer:
+      properties:
+        enable.idempotence: true
+        acks: all
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,caches
+  endpoint:
+    health:
+      show-details: always
+
+resilience4j:
+  retry:
+    instances:
+      paymentClient:
+        max-attempts: 3
+        wait-duration: 500ms
+  circuitbreaker:
+    instances:
+      paymentClient:
+        sliding-window-size: 5
+        minimum-number-of-calls: 5
+        failure-rate-threshold: 50
+        wait-duration-in-open-state: 10s
+        permitted-number-of-calls-in-half-open-state: 2
+  timelimiter:
+    instances:
+      paymentClient:
+        timeout-duration: 2s
+
+app:
+  external-payment:
+    simulated-failure-rate: ${SIMULATED_FAILURE_RATE:0.30}
+  kafka:
+    enabled: ${APP_KAFKA_ENABLED:false}
+    transfer-topic: transfers
+    dlq-topic: transfers.DLQ
